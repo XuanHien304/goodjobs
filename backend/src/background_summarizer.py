@@ -151,7 +151,12 @@ async def summarize_pending_jobs(
         )
 
         try:
-            results = summarizer.batch_analyze(descriptions)
+            # Offload the blocking (requests + time.sleep) Cloudflare batch
+            # call so it does not freeze the uvicorn event loop for up to 300s.
+            loop = asyncio.get_running_loop()
+            results = await loop.run_in_executor(
+                None, summarizer.batch_analyze, descriptions
+            )
 
             for item, (summary, skills) in zip(batch, results):
                 stats["processed"] += 1
