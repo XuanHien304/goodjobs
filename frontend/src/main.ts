@@ -1,5 +1,5 @@
 import { scrapeJobsStream, scrapeLinkedInFallback, classifyInput, normalizeCity, API_BASE } from "./api";
-import { setStatus, clearStatus, appendJobs, hideResults, showProgress, updateProgressCount, markSiteDone, hideProgress, showQueuedMessage, clearQueuedMessage, setLinkedInEnriching, setTopCVEnriching, setSearchContext, setScoreColumnVisible, setFromCache, openJobByLink, hideSuggestionBanner, showIntentBox, hideIntentBox, setIntentAlternatives, replaceJobs, initApplyToast, applyTrackerHandleReturn, buildRow } from "./ui";
+import { setStatus, clearStatus, appendJobs, hideResults, showProgress, updateProgressCount, markSiteDone, hideProgress, showQueuedMessage, clearQueuedMessage, setLinkedInEnriching, setTopCVEnriching, setEnrichmentDone, setSearchContext, setScoreColumnVisible, setFromCache, openJobByLink, hideSuggestionBanner, showIntentBox, hideIntentBox, setIntentAlternatives, replaceJobs, initApplyToast, applyTrackerHandleReturn, buildRow } from "./ui";
 import type { Job } from "./types";
 
 // Initialise apply tracker toast (injected into DOM once)
@@ -179,6 +179,8 @@ async function runSearch(keyword: string, location: string | undefined, sharedJo
 
   let _isCacheHit = false;
   let _isFuzzyCache = false;
+  let _descStatusPending = false;
+  setEnrichmentDone(false);
 
   try {
     await scrapeJobsStream(
@@ -217,6 +219,7 @@ async function runSearch(keyword: string, location: string | undefined, sharedJo
           return;
         }
 
+        _descStatusPending = !(_isCacheHit || _isFuzzyCache);
         if (_isCacheHit || _isFuzzyCache) {
           setStatus(`Found ${count} jobs from the past week.`, "success");
         } else if (fromCvOrSkills) {
@@ -257,9 +260,14 @@ async function runSearch(keyword: string, location: string | undefined, sharedJo
         currentJobs = replaceJobs(rescored);
       },
     );
+    setEnrichmentDone(true);
+    if (_descStatusPending && currentJobs.length > 0) {
+      setStatus(`Found ${currentJobs.length} jobs from the past week.`, "success");
+    }
   } catch (err) {
     hideProgress();
     if ((err as Error).name === "AbortError") return;
+    setEnrichmentDone(true);
     currentJobs = [];
     const isNetworkDown = err instanceof TypeError && err.message.toLowerCase().includes("fetch");
     if (isNetworkDown) {
@@ -412,6 +420,7 @@ document.addEventListener("visibilitychange", () => {
     abortController = null;
     fetchBtn.disabled = false;
     hideProgress();
+    setEnrichmentDone(true);
   }
 });
 
