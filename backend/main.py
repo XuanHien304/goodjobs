@@ -1675,15 +1675,16 @@ async def scrape_stream(req: ScrapeRequest, request: Request):
                     for i, job in enumerate(jobs[:enrich_limit]):
                         cd = cooldown if i > 0 else 0.0
                         try:
+                            # Wait out the per-site rate-limit cooldown BEFORE taking a
+                            # thread, so a sleeping cooldown never pins a pooled worker
+                            # (light lane or Chromium).
+                            if cd:
+                                await asyncio.sleep(cd)
                             if site in _LIGHT_DETAIL:
                                 ok = await loop.run_in_executor(
-                                    _light_executor, detail_fn, job, cd
+                                    _light_executor, detail_fn, job, 0.0
                                 )
                             else:
-                                # Wait out the per-site rate-limit cooldown BEFORE taking a
-                                # Chromium slot, so cooldowns don't block other sites' browsers.
-                                if cd:
-                                    await asyncio.sleep(cd)
                                 # Chromium detail fetch — share the global browser gate
                                 # with listing scrapes so total live Chromium stays <= limit.
                                 async with chromium_sem:

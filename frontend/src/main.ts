@@ -78,6 +78,7 @@ homeLink.addEventListener("click", (e) => {
   clearStatus();
   setLinkedInEnriching(false);
   setTopCVEnriching(false);
+  setEnrichmentDone(true);
   hideIntentBox();
   showRecentJobs();
   (window as any)._slideshowShow?.();
@@ -439,6 +440,7 @@ window.addEventListener("popstate", (event) => {
     clearStatus();
     setLinkedInEnriching(false);
     setTopCVEnriching(false);
+    setEnrichmentDone(true);
     hideIntentBox();
     (window as any)._slideshowShow?.();
     currentJobs = [];

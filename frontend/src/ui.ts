@@ -567,11 +567,15 @@ export function setLinkedInEnriching(value: boolean): void {
 export function setEnrichmentDone(value: boolean): void {
   _enrichmentDone = value;
   if (!value) return;
-  _linkedinEnriching = false;
-  _topcvEnriching    = false;
+  setLinkedInEnriching(false);
+  setTopCVEnriching(false);
   if (_allJobs.length > 0) _applyFilter();
-  jobModalDesc.querySelector(".desc-loading")?.remove();
-  jobModalSkills.querySelector(".desc-loading")?.remove();
+  if (jobModalDesc.querySelector(".desc-loading")) {
+    jobModalDesc.innerHTML = '<span class="no-skills">—</span>';
+  }
+  if (jobModalSkills.querySelector(".desc-loading")) {
+    jobModalSkills.innerHTML = '<span class="no-skills">—</span>';
+  }
 }
 
 /** Set whether TopCV Phase 2 detail enrichment is in progress. */
